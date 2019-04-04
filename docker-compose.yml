@@ -1,0 +1,40 @@
+version: '3.7'
+
+services:
+  rev:
+    image: nginx:1.15
+    network_mode: "host"
+    ports:
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./keys/fullchain.pem:/etc/nginx/keys/fullchain.pem:ro
+      - ./keys/privkey.pem:/etc/nginx/keys/privkey.pem:ro
+  app:
+    image: nextcloud:15-apache
+    restart: always
+    ports:
+      - "127.0.0.1:3040:80"
+    depends_on:
+      - db
+    environment:
+      - MYSQL_HOST=db
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_PASSWORD=nextcloud
+    volumes:
+      - ${PWD}/data:/var/www/html
+  db:
+    image: mariadb:10.4
+    restart: always
+    command: mysqld --character-set-server=utf8 --collation-server=utf8_unicode_ci
+    environment:
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_USER=nextcloud
+      - MYSQL_PASSWORD=nextcloud
+    expose:
+      - '3306'
+    volumes:
+      - ${PWD}/db:/var/lib/mysql
+
